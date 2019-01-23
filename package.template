@@ -1,0 +1,4 @@
+packageName: 
+channels:
+- name: stable
+  currentCSV: 
