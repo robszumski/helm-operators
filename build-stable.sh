@@ -93,9 +93,11 @@ build_csv() {
 	echo -e "$DESC\n\n_This was generated from a Helm chart automatically._\n\nMany HElm charts require running a root, your admin will need to allow this with a SecurityContextConstraint." | sed 's/^/    /' >> $CSV_OUT
 
 	# Append icon base64 that is too long for yq to process
-	echo -e "  icon:" >> $CSV_OUT
-	echo -e "    mediatype: image/png" >> $CSV_OUT
-	echo -e "    base64data: "$(curl -s $ICON_SRC | openssl base64 -A) >> $CSV_OUT
+	# echo -e "  icon:" >> $CSV_OUT
+	# echo -e "    mediatype: image/png" >> $CSV_OUT
+	# curl -s $ICON_SRC > icon.png
+	# sips -Z 128 icon.png
+	# echo -e "    base64data: "$(cat icon.png | openssl base64 -A) >> $CSV_OUT
 
 	# Do some dumb find and replace because this yq thing can't make the structure I require
 	sed -i -e 's/- serviceAccountName/  serviceAccountName/g' $CSV_OUT
