@@ -102,6 +102,7 @@ clean_sdks() {
 	rm -r "$ROOT_DIR/$NAME/build"
 	rm -r "$ROOT_DIR/$NAME/deploy"
 	rm -r "$ROOT_DIR/$NAME/helm-charts"
+	rm -rf "$ROOT_DIR/$NAME/.git/"
 	rm "$ROOT_DIR/$NAME/watches.yaml"
 }
 
