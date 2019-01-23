@@ -89,7 +89,8 @@ build_csv() {
 	echo -e "$DESC\n\n_This was generated from a Helm chart automatically._\n\nMany HElm charts require running a root, your admin will need to allow this with a SecurityContextConstraint." | sed 's/^/    /' >> $CSV_OUT
 
 	# Do some dumb find and replace because this yq thing can't make the structure I require
-	sed -i 's/- serviceAccountName/  serviceAccountName/g' $CSV_OUT
+	sed -i -e 's/- serviceAccountName/  serviceAccountName/g' $CSV_OUT
+	rm -r "$CSV_OUT-e"
 
 	# Write out package
 	PACKAGE_OUT="$ROOT_DIR/$1/$NAME.package.yaml"
