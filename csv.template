@@ -2,8 +2,12 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: >-
-      
+    alm-examples: 
+    categories:
+    description:
+    containerImage:
+    createdAt:
+    support: 
   name: couchbase-operator.v1.0.0
   namespace: default
 spec:
@@ -21,9 +25,6 @@ spec:
     name: Helm Community
   maturity: stable
   version: 1.0.0
-  icon:
-    - base64data: 
-      mediatype: image/png
   links:
     - name: Couchbase
       url: 'https://www.couchbase.com'
