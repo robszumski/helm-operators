@@ -86,7 +86,7 @@ spec:
           - securitycontextconstraints
           resourceNames:
           - privileged
-      - serviceAccountName: cockroachdb-operator
+        serviceAccountName: cockroachdb-operator
       permissions:
       - rules:
         - apiGroups:
@@ -119,7 +119,7 @@ spec:
           - deployments
           verbs:
           - '*'
-      - serviceAccountName: cockroachdb-operator
+        serviceAccountName: cockroachdb-operator
     strategy: deployment
   description: |
     CockroachDB is a scalable, survivable, strongly-consistent SQL database.
