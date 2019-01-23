@@ -35,6 +35,7 @@ build_csv() {
 	MAINTAINERS_EMAIL=$(yq r $CHART_SRC/$1/Chart.yaml maintainers[0].email)
 	DESC=$(yq r $CHART_SRC/$1/Chart.yaml description)
 	API_VERSION="v1alpha1"
+	KIND=$(echo $NAME |  head -c 1 | tr [a-z] [A-Z]; echo $NAME | tail -c +2)
 
 	# Write out CR metadata
 	CR_OUT="$ROOT_DIR/$1/$NAME.cr.yaml"
@@ -43,7 +44,7 @@ build_csv() {
 	# Grab default values, indent them, and append to CR spec
 	echo -e "\nspec:\n" >> $CR_OUT
 	tail -n +3 "$CHART_SRC/$1/values.yaml" | sed 's/^/  /' >> $CR_OUT
-	yq w -i $CR_OUT kind $NAME
+	yq w -i $CR_OUT kind $KIND
 	echo -e "  Wrote CR to $CR_OUT"
 
 	# Compute values we control
@@ -54,13 +55,13 @@ build_csv() {
 	cp "$ROOT_DIR/csv.template" $CSV_OUT
 	echo -e "  Wrote CSV to $CSV_OUT"
 
-	yq w -i $CSV_OUT metadata.annotations.alm-examples $(yq r --tojson $CR_OUT)
+	yq w -i $CSV_OUT metadata.annotations.alm-examples "["$(yq r --tojson $CR_OUT)"]"
 	yq w -i $CSV_OUT metadata.name $CSV_NAME
 
 	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].name $NAME"s.charts.helm.k8s.io"
 	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].description $DESC
 	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].displayName $NAME
-	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].kind $NAME
+	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].kind $KIND
 	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].version $API_VERSION
 
 	yq w -i $CSV_OUT spec.displayName $NAME
@@ -86,6 +87,9 @@ build_csv() {
 	# Grab chart desc and append our special message
 	echo -e "  description: |" >> $CSV_OUT
 	echo -e "$DESC\n\n_This was generated from a Helm chart automatically._\n\nMany HElm charts require running a root, your admin will need to allow this with a SecurityContextConstraint." | sed 's/^/    /' >> $CSV_OUT
+
+	# Do some dumb find and replace because this yq thing can't make the structure I require
+	sed -i 's/- serviceAccountName/  serviceAccountName/g' $CSV_OUT
 
 	# Write out package
 	PACKAGE_OUT="$ROOT_DIR/$1/$NAME.package.yaml"
