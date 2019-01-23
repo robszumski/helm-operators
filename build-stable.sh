@@ -30,7 +30,6 @@ build_csv() {
 	CSV_NAME="$1.v$VERSION"
 	SOURCE_LINK=$(yq r $CHART_SRC/$1/Chart.yaml sources[0])
 	ICON_SRC=$(yq r $CHART_SRC/$1/Chart.yaml icon)
-	ICON_DATA=$(curl -s $ICON_SRC | openssl base64 -A)
 	MAINTAINERS_NAME=$(yq r $CHART_SRC/$1/Chart.yaml maintainers[0].name)
 	MAINTAINERS_EMAIL=$(yq r $CHART_SRC/$1/Chart.yaml maintainers[0].email)
 	DESC=$(yq r $CHART_SRC/$1/Chart.yaml description)
@@ -55,8 +54,13 @@ build_csv() {
 	cp "$ROOT_DIR/csv.template" $CSV_OUT
 	echo -e "  Wrote CSV to $CSV_OUT"
 
-	yq w -i $CSV_OUT metadata.annotations.alm-examples "["$(yq r --tojson $CR_OUT)"]"
 	yq w -i $CSV_OUT metadata.name $CSV_NAME
+	yq w -i $CSV_OUT metadata.annotations.alm-examples "["$(yq r --tojson $CR_OUT)"]"
+	yq w -i $CSV_OUT metadata.annotations.categories "Helm"
+    yq w -i $CSV_OUT metadata.annotations.description $DESC
+    yq w -i $CSV_OUT metadata.annotations.containerImage $OPERATOR_IMAGE
+    yq w -i $CSV_OUT metadata.annotations.createdAt $(date +"%Y-%m-%dT%H-%M-%SZ")
+    yq w -i $CSV_OUT metadata.annotations.support $MAINTAINERS_NAME
 
 	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].name $NAME"s.charts.helm.k8s.io"
 	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].description $DESC
@@ -66,7 +70,7 @@ build_csv() {
 
 	yq w -i $CSV_OUT spec.displayName $NAME
 	yq w -i $CSV_OUT spec.version $VERSION
-    yq w -i $CSV_OUT spec.icon.base64data $ICON_DATA
+    #yq w -i $CSV_OUT spec.icon.base64data $ICON_DATA
 	yq w -i $CSV_OUT spec.links[0].name "Helm Chart Source"
 	yq w -i $CSV_OUT spec.links[0].url $SOURCE_LINK
 
@@ -87,6 +91,11 @@ build_csv() {
 	# Grab chart desc and append our special message
 	echo -e "  description: |" >> $CSV_OUT
 	echo -e "$DESC\n\n_This was generated from a Helm chart automatically._\n\nMany HElm charts require running a root, your admin will need to allow this with a SecurityContextConstraint." | sed 's/^/    /' >> $CSV_OUT
+
+	# Append icon base64 that is too long for yq to process
+	echo -e "  icon:" >> $CSV_OUT
+	echo -e "    mediatype: image/png" >> $CSV_OUT
+	echo -e "    base64data: "$(curl -s $ICON_SRC | openssl base64 -A) >> $CSV_OUT
 
 	# Do some dumb find and replace because this yq thing can't make the structure I require
 	sed -i -e 's/- serviceAccountName/  serviceAccountName/g' $CSV_OUT
@@ -117,9 +126,9 @@ push_image () {
 }
 
 for filename in $(cat < "$WHITELIST"); do
-    build_sdk "$filename"
-    build_image "$filename"
+    # build_sdk "$filename"
+    # build_image "$filename"
     build_csv "$filename"
-    push_image "$filename"
-    clean_sdks "$filename"
+    # push_image "$filename"
+    # clean_sdks "$filename"
 done
