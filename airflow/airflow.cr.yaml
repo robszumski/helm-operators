@@ -1,0 +1,90 @@
+apiVersion: charts.helm.k8s.io/v1alpha1
+kind: airflow
+metadata:
+  name: example
+spec:
+  airflow:
+    fernetKey: ""
+    service:
+      type: ClusterIP
+    executor: Celery
+    initRetryLoop: null
+    image:
+      repository: puckel/docker-airflow
+      tag: 1.10.0-4
+      pullPolicy: IfNotPresent
+      pullSecret: null
+    schedulerNumRuns: "-1"
+    schedulerDoPickle: true
+    webReplicas: 1
+    config: {}
+    podDisruptionBudget:
+      maxUnavailable: 1
+    connections: {}
+  workers:
+    enabled: true
+    replicas: 1
+    resources: {}
+    pod:
+      annotations: null
+    celery:
+      instances: 1
+    secretsDir: /var/airflow/secrets
+    secrets: []
+  ingress:
+    enabled: false
+    web:
+      path: ""
+      host: ""
+      annotations: null
+      tls:
+        enabled: false
+    flower:
+      path: ""
+      livenessPath: /
+      host: ""
+      annotations: null
+      tls:
+        enabled: false
+  persistence:
+    enabled: false
+    accessMode: ReadWriteOnce
+    size: 1Gi
+  dags:
+    path: /usr/local/airflow/dags
+    doNotPickle: false
+    git:
+      url: null
+      ref: master
+    initContainer:
+      enabled: false
+      image:
+        repository: alpine/git
+        tag: 1.0.4
+        pullPolicy: IfNotPresent
+      installRequirements: true
+  rbac:
+    create: true
+  serviceAccount:
+    create: true
+    name: null
+  existingAirflowSecret: ""
+  postgresql:
+    enabled: true
+    service:
+      port: 5432
+    postgresUser: postgres
+    postgresPassword: airflow
+    postgresDatabase: airflow
+    persistence:
+      enabled: true
+      accessMode: ReadWriteOnce
+  redis:
+    enabled: true
+    password: airflow
+    master:
+      persistence:
+        enabled: false
+        accessMode: ReadWriteOnce
+    cluster:
+      enabled: false
