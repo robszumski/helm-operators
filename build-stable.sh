@@ -66,7 +66,7 @@ build_csv() {
 
 	yq w -i $CSV_OUT spec.displayName $NAME
 	yq w -i $CSV_OUT spec.version $VERSION
-    #yq w -i $CSV_OUT spec.icon.base64data $ICON_DATA
+    yq w -i $CSV_OUT spec.icon.base64data $ICON_DATA
 	yq w -i $CSV_OUT spec.links[0].name "Helm Chart Source"
 	yq w -i $CSV_OUT spec.links[0].url $SOURCE_LINK
 
