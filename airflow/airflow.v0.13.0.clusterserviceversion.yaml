@@ -6,7 +6,7 @@ metadata:
     categories: Helm
     description: Airflow
     containerImage: quay.io/helmoperators/airflow:0.13.0
-    createdAt: 2019-01-23T13-15-26Z
+    createdAt: 2019-01-24T15-02-14Z
     support: gsemet
   name: airflow.v0.13.0
   namespace: default
@@ -61,10 +61,10 @@ spec:
               labels:
                 name: airflow
             spec:
-              serviceAccountName: airflow
+              serviceAccountName: airflow-operator
               containers:
               - name: airflow
-                image: REPLACE_IMAGE
+                image: quay.io/helmoperators/airflow:0.13.0
                 ports:
                 - containerPort: 60000
                   name: metrics
@@ -76,8 +76,6 @@ spec:
                       fieldPath: metadata.namespace
                 - name: OPERATOR_NAME
                   value: airflow
-              container:
-              - image: quay.io/helmoperators/airflow:0.13.0
       clusterPermissions:
       - rules:
         - verbs:
@@ -92,9 +90,9 @@ spec:
       permissions:
       - rules:
         - apiGroups:
-          - couchbase.com
+          - charts.helm.k8s.io
           resources:
-          - couchbaseclusters
+          - airflows
           verbs:
           - '*'
         - apiGroups:
