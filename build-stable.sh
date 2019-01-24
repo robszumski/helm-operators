@@ -131,9 +131,9 @@ push_image () {
 }
 
 for filename in $(cat < "$WHITELIST"); do
-    #build_sdk "$filename"
-    #build_image "$filename"
+    build_sdk "$filename"
+    build_image "$filename"
     build_csv "$filename"
-    #push_image "$filename"
-    #clean_sdks "$filename"
+    push_image "$filename"
+    clean_sdks "$filename"
 done
