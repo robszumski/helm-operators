@@ -122,6 +122,7 @@ clean_sdks() {
 	rm -r "$ROOT_DIR/$NAME/helm-charts"
 	rm -rf "$ROOT_DIR/$NAME/.git/"
 	rm "$ROOT_DIR/$NAME/watches.yaml"
+	rm "$ROOT_DIR/$NAME/icon.png"
 }
 
 push_image () {

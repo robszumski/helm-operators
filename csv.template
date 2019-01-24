@@ -9,7 +9,7 @@ metadata:
     createdAt:
     support: 
   name: couchbase-operator.v1.0.0
-  namespace: default
+  namespace: placeholder
 spec:
   customresourcedefinitions:
     owned:
