@@ -57,10 +57,10 @@ build_csv() {
 	yq w -i $CSV_OUT metadata.name $CSV_NAME
 	yq w -i $CSV_OUT metadata.annotations.alm-examples "["$(yq r --tojson $CR_OUT)"]"
 	yq w -i $CSV_OUT metadata.annotations.categories "Helm"
-    yq w -i $CSV_OUT metadata.annotations.description $DESC
-    yq w -i $CSV_OUT metadata.annotations.containerImage $OPERATOR_IMAGE
-    yq w -i $CSV_OUT metadata.annotations.createdAt $(date +"%Y-%m-%dT%H-%M-%SZ")
-    yq w -i $CSV_OUT metadata.annotations.support $MAINTAINERS_NAME
+	yq w -i $CSV_OUT metadata.annotations.description $DESC
+	yq w -i $CSV_OUT metadata.annotations.containerImage $OPERATOR_IMAGE
+	yq w -i $CSV_OUT metadata.annotations.createdAt $(date +"%Y-%m-%dT%H-%M-%SZ")
+	yq w -i $CSV_OUT metadata.annotations.support $MAINTAINERS_NAME
 
 	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].name $NAME"s.charts.helm.k8s.io"
 	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].description $DESC
@@ -70,7 +70,7 @@ build_csv() {
 
 	yq w -i $CSV_OUT spec.displayName $NAME
 	yq w -i $CSV_OUT spec.version $VERSION
-    #yq w -i $CSV_OUT spec.icon.base64data $ICON_DATA
+	#yq w -i $CSV_OUT spec.icon.base64data $ICON_DATA
 	yq w -i $CSV_OUT spec.links[0].name "Helm Chart Source"
 	yq w -i $CSV_OUT spec.links[0].url $SOURCE_LINK
 
@@ -80,13 +80,16 @@ build_csv() {
 	# Build up deployment spec from SDK output
 	yq w -i $CSV_OUT spec.install.spec.deployments[0].name "$NAME-operator"
 	tail -n +5 "$ROOT_DIR/$1/deploy/operator.yaml" | sed 's/^/        /' >> $CSV_OUT
-	yq w -i $CSV_OUT spec.install.spec.deployments[0].spec.template.spec.container[0].image $OPERATOR_IMAGE
+	yq w -i $CSV_OUT spec.install.spec.deployments[0].spec.template.spec.containers[0].image $OPERATOR_IMAGE
+	yq w -i $CSV_OUT spec.install.spec.deployments[0].spec.template.spec.serviceAccountName "$NAME-operator"
 
 	# Append generic RBAC config
 	cat "$ROOT_DIR/rbac.template" | sed 's/^/      /' >> $CSV_OUT
 	yq w -i $CSV_OUT spec.install.strategy "deployment"
 	yq w -i $CSV_OUT spec.install.spec.permissions[+].serviceAccountName "$NAME-operator"
 	yq w -i $CSV_OUT spec.install.spec.clusterPermissions[+].serviceAccountName "$NAME-operator"
+	yq w -i $CSV_OUT spec.install.spec.permissions[0].rules[0].apiGroups[0] "charts.helm.k8s.io"
+	yq w -i $CSV_OUT spec.install.spec.permissions[0].rules[0].resources[0] $NAME"s"
 
 	# Grab chart desc and append our special message
 	echo -e "  description: |" >> $CSV_OUT
@@ -128,9 +131,9 @@ push_image () {
 }
 
 for filename in $(cat < "$WHITELIST"); do
-    build_sdk "$filename"
-    build_image "$filename"
+    #build_sdk "$filename"
+    #build_image "$filename"
     build_csv "$filename"
-    push_image "$filename"
-    clean_sdks "$filename"
+    #push_image "$filename"
+    #clean_sdks "$filename"
 done
