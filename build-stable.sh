@@ -138,10 +138,27 @@ build_csv() {
 	yq w -i $PACKAGE_OUT packageName $NAME
 	yq w -i $PACKAGE_OUT channels[0].currentCSV $CSV_NAME
 
+	# Move out CRD
+	CRD_OUT="$ROOT_DIR/$NAME/${NAME}.crd.yaml"
+	cp "$ROOT_DIR/$NAME/deploy/crds/charts_${API_VERSION}_${NAME}_crd.yaml" $CRD_OUT
+
+	# Write out bundle
+	BUNDLE_OUT="$ROOT_DIR/$NAME/bundle.$VERSION.yaml"
+	echo -e "data:" > $BUNDLE_OUT
+	echo -e "  customResourceDefinitions: |-" >> $BUNDLE_OUT
+	cat $CRD_OUT | sed 's/^/      /' >> $BUNDLE_OUT
+	echo -e "  clusterServiceVersions: |-" >> $BUNDLE_OUT
+	cat $CSV_OUT | sed 's/^/      /' >> $BUNDLE_OUT
+	echo -e "  packages: |-" >> $BUNDLE_OUT
+	cat $PACKAGE_OUT | sed 's/^/      /' >> $BUNDLE_OUT
+	sed -i -e 's#  apiVersion: apiextensions.k8s.io/v1beta1#- apiVersion: apiextensions.k8s.io/v1beta1#g' $BUNDLE_OUT
+	sed -i -e 's#  apiVersion: operators.coreos.com/v1alpha1#- apiVersion: operators.coreos.com/v1alpha1#g' $BUNDLE_OUT
+	sed -i -e 's#  packageName:#- packageName:#g' $BUNDLE_OUT
+	rm -r "$BUNDLE_OUT-e"
+
 }
 
 clean_sdks() {
-	cp "$ROOT_DIR/$NAME/deploy/crds/charts_${API_VERSION}_${NAME}_crd.yaml" "$ROOT_DIR/$NAME/${NAME}_crd.yaml"
 	rm -r "$ROOT_DIR/$NAME/build"
 	rm -r "$ROOT_DIR/$NAME/deploy"
 	rm -r "$ROOT_DIR/$NAME/helm-charts"
@@ -156,9 +173,9 @@ push_image () {
 }
 
 for filename in $(cat < "$WHITELIST"); do
-    build_sdk "$filename"
-    build_image "$filename"
+    #build_sdk "$filename"
+    #build_image "$filename"
     build_csv "$filename"
-    push_image "$filename"
-    clean_sdks "$filename"
+    #push_image "$filename"
+    #clean_sdks "$filename"
 done
