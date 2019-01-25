@@ -95,11 +95,36 @@ build_csv() {
 	echo -e "$DESC\n\n_This was generated from a Helm chart automatically._\n\nMany Helm charts require running a root, your admin will need to allow this with a SecurityContextConstraint." | sed 's/^/    /' >> $CSV_OUT
 
 	# Append icon base64 that is too long for yq to process
-	echo -e "  icon:" >> $CSV_OUT
-	curl -s $ICON_SRC > "$ROOT_DIR/$NAME/icon.png"
-	sips --resampleWidth 256 icon.png
-	echo -e "  - base64data: "$(cat "$ROOT_DIR/$NAME/icon.png" | openssl base64 -A) >> $CSV_OUT
-	echo -e "    mediatype: image/png" >> $CSV_OUT
+	if [[ ! -z "$ICON_SRC" ]] && [ "$ICON_SRC" = "null" ]; then
+		echo "  No icon found in Chart.yaml"
+	else
+		case $ICON_SRC in
+			*"png"*)
+				FORMAT=png
+				MIME=image/png
+				;;
+			*"gif"*)
+				FORMAT=gif
+				MIME=image/gif
+				;;
+			*"jpg"*)
+				FORMAT=jpg
+				MIME=image/jpeg
+				;;
+			*"svg"*)
+				FORMAT=svg
+				MIME=image/svg+xml
+				;;
+		esac
+
+		echo "  Found icon $ICON_SRC"
+		ICON_OUT="$ROOT_DIR/$NAME/icon.$FORMAT"
+		echo -e "  icon:" >> $CSV_OUT
+		curl -s $ICON_SRC > $ICON_OUT
+		sips --resampleWidth 256 $ICON_OUT
+		echo -e "  - base64data: "$(cat $ICON_OUT | openssl base64 -A) >> $CSV_OUT
+		echo -e "    mediatype: $MIME" >> $CSV_OUT
+	fi
 
 	# Do some dumb find and replace because this yq thing can't make the structure I require
 	sed -i -e 's/- serviceAccountName/  serviceAccountName/g' $CSV_OUT
@@ -122,7 +147,7 @@ clean_sdks() {
 	rm -r "$ROOT_DIR/$NAME/helm-charts"
 	rm -rf "$ROOT_DIR/$NAME/.git/"
 	rm "$ROOT_DIR/$NAME/watches.yaml"
-	rm "$ROOT_DIR/$NAME/icon.png"
+	rm "$ICON_OUT"
 }
 
 push_image () {
