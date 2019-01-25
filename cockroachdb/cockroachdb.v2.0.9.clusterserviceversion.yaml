@@ -6,7 +6,7 @@ metadata:
     categories: Helm
     description: CockroachDB
     containerImage: quay.io/helmoperators/cockroachdb:2.0.9
-    createdAt: 2019-01-24T15-33-43Z
+    createdAt: 2019-01-24T16-41-14Z
     support: a-robinson
   name: cockroachdb.v2.0.9
   namespace: placeholder

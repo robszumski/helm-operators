@@ -6,7 +6,7 @@ metadata:
     categories: Helm
     description: Airflow
     containerImage: quay.io/helmoperators/airflow:0.13.0
-    createdAt: 2019-01-24T15-33-49Z
+    createdAt: 2019-01-24T16-41-19Z
     support: gsemet
   name: airflow.v0.13.0
   namespace: placeholder
