@@ -6,7 +6,7 @@ metadata:
     categories: Helm
     description: Airflow
     containerImage: quay.io/helmoperators/airflow:0.13.0
-    createdAt: 2019-01-24T16-41-19Z
+    createdAt: 2019-01-25T16-57-04Z
     support: gsemet
   name: airflow.v0.13.0
   namespace: placeholder
@@ -116,7 +116,25 @@ spec:
         - apiGroups:
           - apps
           resources:
-          - deployments
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - batch
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - policy
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - extensions
+          resources:
+          - '*'
           verbs:
           - '*'
         serviceAccountName: airflow-operator
