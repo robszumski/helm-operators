@@ -172,7 +172,7 @@ push_image () {
 	docker tag "$QUAY_REPO/$NAME:latest" "$QUAY_REPO/$NAME:$VERSION"
 	docker push "$QUAY_REPO/$NAME:$VERSION"
 	# push bundle to Quay app registry
-	./push-to-quay.sh $NAME $VERSION "$ROOT_DIR/$NAME/bundle.$VERSION.yaml"
+	"$ROOT_DIR/push-to-quay.sh" $NAME $VERSION "$ROOT_DIR/$NAME/bundle.$VERSION.yaml"
 }
 
 for filename in $(cat < "$WHITELIST"); do
