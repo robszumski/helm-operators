@@ -168,14 +168,17 @@ clean_sdks() {
 }
 
 push_image () {
+	# push docker image for Operator
 	docker tag "$QUAY_REPO/$NAME:latest" "$QUAY_REPO/$NAME:$VERSION"
 	docker push "$QUAY_REPO/$NAME:$VERSION"
+	# push bundle to Quay app registry
+	./push-to-quay.sh $NAME $VERSION "$ROOT_DIR/$NAME/bundle.$VERSION.yaml"
 }
 
 for filename in $(cat < "$WHITELIST"); do
-    #build_sdk "$filename"
-    #build_image "$filename"
+    build_sdk "$filename"
+    build_image "$filename"
     build_csv "$filename"
-    #push_image "$filename"
-    #clean_sdks "$filename"
+    push_image "$filename"
+    clean_sdks "$filename"
 done
