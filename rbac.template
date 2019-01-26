@@ -37,6 +37,24 @@ permissions:
   - apiGroups:
       - apps
     resources:
-      - deployments
+      - '*'
     verbs:
       - '*' 
+  - apiGroups:
+      - batch
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - policy
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - extensions
+    resources:
+      - '*'
+    verbs:
+      - '*'  
