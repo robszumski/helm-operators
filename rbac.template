@@ -11,9 +11,9 @@ clusterPermissions:
 permissions:
 - rules:
   - apiGroups:
-      - couchbase.com
+      - charts.helm.k8s.io
     resources:
-      - couchbaseclusters
+      - '*'
     verbs:
       - '*'
   - apiGroups:
@@ -57,4 +57,11 @@ permissions:
     resources:
       - '*'
     verbs:
-      - '*'  
+      - '*' 
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - roles
+      - rolebindings 
+    verbs:
+      - '*'

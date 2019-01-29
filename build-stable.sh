@@ -87,8 +87,6 @@ build_csv() {
 	yq w -i $CSV_OUT spec.install.strategy "deployment"
 	yq w -i $CSV_OUT spec.install.spec.permissions[+].serviceAccountName "$NAME-operator"
 	yq w -i $CSV_OUT spec.install.spec.clusterPermissions[+].serviceAccountName "$NAME-operator"
-	yq w -i $CSV_OUT spec.install.spec.permissions[0].rules[0].apiGroups[0] "charts.helm.k8s.io"
-	yq w -i $CSV_OUT spec.install.spec.permissions[0].rules[0].resources[0] $NAME"s"
 
 	# Grab chart desc and append our special message
 	echo -e "  description: |" >> $CSV_OUT
