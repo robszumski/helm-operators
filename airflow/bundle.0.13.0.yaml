@@ -22,16 +22,18 @@ data:
         annotations:
           alm-examples: '[{"apiVersion":"charts.helm.k8s.io/v1alpha1","kind":"Airflow","metadata":{"name":"example"},"spec":{"airflow":{"config":{},"connections":{},"executor":"Celery","fernetKey":"","image":{"pullPolicy":"IfNotPresent","pullSecret":null,"repository":"puckel/docker-airflow","tag":"1.10.0-4"},"initRetryLoop":null,"podDisruptionBudget":{"maxUnavailable":1},"schedulerDoPickle":true,"schedulerNumRuns":"-1","service":{"type":"ClusterIP"},"webReplicas":1},"dags":{"doNotPickle":false,"git":{"ref":"master","url":null},"initContainer":{"enabled":false,"image":{"pullPolicy":"IfNotPresent","repository":"alpine/git","tag":"1.0.4"},"installRequirements":true},"path":"/usr/local/airflow/dags"},"existingAirflowSecret":"","ingress":{"enabled":false,"flower":{"annotations":null,"host":"","livenessPath":"/","path":"","tls":{"enabled":false}},"web":{"annotations":null,"host":"","path":"","tls":{"enabled":false}}},"persistence":{"accessMode":"ReadWriteOnce","enabled":false,"size":"1Gi"},"postgresql":{"enabled":true,"persistence":{"accessMode":"ReadWriteOnce","enabled":true},"postgresDatabase":"airflow","postgresPassword":"airflow","postgresUser":"postgres","service":{"port":5432}},"rbac":{"create":true},"redis":{"cluster":{"enabled":false},"enabled":true,"master":{"persistence":{"accessMode":"ReadWriteOnce","enabled":false}},"password":"airflow"},"serviceAccount":{"create":true,"name":null},"workers":{"celery":{"instances":1},"enabled":true,"pod":{"annotations":null},"replicas":1,"resources":{},"secrets":[],"secretsDir":"/var/airflow/secrets"}}}]'
           categories: Helm
-          description: Airflow
+          description: Airflow is a platform to programmatically author, schedule and monitor
+            workflows
           containerImage: quay.io/helmoperators/airflow:0.13.0
-          createdAt: 2019-01-29T13-44-48Z
+          createdAt: 2019-01-29T15-05-42Z
           support: gsemet
         name: airflow.v0.13.0
         namespace: placeholder
       spec:
         customresourcedefinitions:
           owned:
-          - description: Airflow
+          - description: Airflow is a platform to programmatically author, schedule and
+              monitor workflows
             displayName: airflow
             kind: Airflow
             name: airflows.charts.helm.k8s.io
@@ -58,13 +60,6 @@ data:
         maintainers:
         - email: gaetan@xeberon.net
           name: gsemet
-        selector:
-          matchLabels:
-            alm-owner-etcd: couchbaseoperator
-            operated-by: couchbaseoperator
-        labels:
-          alm-owner-etcd: couchbaseoperator
-          operated-by: couchbaseoperator
         install:
           spec:
             deployments:
@@ -89,9 +84,7 @@ data:
                       imagePullPolicy: Always
                       env:
                       - name: WATCH_NAMESPACE
-                        valueFrom:
-                          fieldRef:
-                            fieldPath: metadata.namespace
+                        value: ""
                       - name: OPERATOR_NAME
                         value: airflow
             clusterPermissions:
