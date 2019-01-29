@@ -24,7 +24,7 @@ data:
           categories: Helm
           description: CockroachDB
           containerImage: quay.io/helmoperators/cockroachdb:2.0.9
-          createdAt: 2019-01-25T17-16-13Z
+          createdAt: 2019-01-29T13-44-39Z
           support: a-robinson
         name: cockroachdb.v2.0.9
         namespace: placeholder
@@ -110,7 +110,7 @@ data:
               - apiGroups:
                 - charts.helm.k8s.io
                 resources:
-                - cockroachdbs
+                - '*'
                 verbs:
                 - '*'
               - apiGroups:
@@ -153,6 +153,13 @@ data:
                 - extensions
                 resources:
                 - '*'
+                verbs:
+                - '*'
+              - apiGroups:
+                - rbac.authorization.k8s.io
+                resources:
+                - roles
+                - rolebindings
                 verbs:
                 - '*'
               serviceAccountName: cockroachdb-operator
