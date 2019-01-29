@@ -12,7 +12,7 @@ ROOT_DIR="$PWD"
 build_sdk() {
 	echo -e "\nBuilding SDK for: $1 ($CHART_SRC/$1)"
 	cd $ROOT_DIR
-	$SDK new $1 --type=helm --helm-chart-source="$CHART_SRC/$1"
+	$SDK new $1 --type=helm --helm-chart-source="$CHART_SRC/$1" --cluster-scoped
 }
 
 build_image() {
@@ -57,13 +57,13 @@ build_csv() {
 	yq w -i $CSV_OUT metadata.name $CSV_NAME
 	yq w -i $CSV_OUT metadata.annotations.alm-examples "["$(yq r --tojson $CR_OUT)"]"
 	yq w -i $CSV_OUT metadata.annotations.categories "Helm"
-	yq w -i $CSV_OUT metadata.annotations.description $DESC
+	yq w -i $CSV_OUT metadata.annotations.description "$DESC"
 	yq w -i $CSV_OUT metadata.annotations.containerImage $OPERATOR_IMAGE
 	yq w -i $CSV_OUT metadata.annotations.createdAt $(date +"%Y-%m-%dT%H-%M-%SZ")
 	yq w -i $CSV_OUT metadata.annotations.support $MAINTAINERS_NAME
 
 	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].name $NAME"s.charts.helm.k8s.io"
-	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].description $DESC
+	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].description "$DESC"
 	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].displayName $NAME
 	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].kind $KIND
 	yq w -i $CSV_OUT spec.customresourcedefinitions.owned[0].version $API_VERSION
@@ -170,7 +170,8 @@ push_image () {
 	docker tag "$QUAY_REPO/$NAME:latest" "$QUAY_REPO/$NAME:$VERSION"
 	docker push "$QUAY_REPO/$NAME:$VERSION"
 	# push bundle to Quay app registry
-	"$ROOT_DIR/push-to-quay.sh" $NAME $VERSION "$ROOT_DIR/$NAME/bundle.$VERSION.yaml"
+	RANDOM=$(date +"%H-%M-%S")
+	"$ROOT_DIR/push-to-quay.sh" $NAME "$VERSION-$RANDOM" "$ROOT_DIR/$NAME/bundle.$VERSION.yaml"
 }
 
 for filename in $(cat < "$WHITELIST"); do

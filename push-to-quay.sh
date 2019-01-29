@@ -3,7 +3,7 @@
 set -e
 
 if [[ -z "$3" ]]; then
-  echo "Usage: $0 [REPOSITORY] [RELEASE] [BUNDLE LOCATIoN]"
+  echo "Usage: $0 [REPOSITORY] [RELEASE] [BUNDLE LOCATION]"
   exit 1
 fi
 

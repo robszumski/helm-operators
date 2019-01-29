@@ -8,26 +8,26 @@ metadata:
     containerImage:
     createdAt:
     support: 
-  name: couchbase-operator.v1.0.0
+  name: 
   namespace: placeholder
 spec:
   customresourcedefinitions:
     owned:
-      - description: Manages Couchbase clusters
-        displayName: Couchbase Cluster
-        kind: CouchbaseCluster
-        name: couchbaseclusters.couchbase.com
+      - description: 
+        displayName: 
+        kind: 
+        name: 
         version: v1
   keywords:
     - helm
-  displayName: Couchbase Operator
+  displayName: 
   provider:
     name: Helm Community
   maturity: stable
   version: 1.0.0
   links:
-    - name: Couchbase
-      url: 'https://www.couchbase.com'
+    - name: 
+      url: ''
   installModes:
   - type: OwnNamespace
     supported: true
@@ -38,15 +38,8 @@ spec:
   - type: AllNamespaces
     supported: true
   maintainers:
-    - email: support@couchbase.com
-      name: Couchbase
-  selector:
-    matchLabels:
-      alm-owner-etcd: couchbaseoperator
-      operated-by: couchbaseoperator
-  labels:
-    alm-owner-etcd: couchbaseoperator
-    operated-by: couchbaseoperator
+    - email: 
+      name: 
 
 
 
