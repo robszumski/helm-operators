@@ -8,10 +8,17 @@ CHART_SRC="/Users/robszumski/Documents/charts/stable"
 SDK="/Users/robszumski/Documents/src/github.com/operator-framework/operator-sdk/build/operator-sdk-pr-949"
 QUAY_REPO="quay.io/helmoperators"
 ROOT_DIR="$PWD"
+TEMP_DIR=$(mktemp -d)
+
+# Create temodir and symlink into GOPATH
+mkdir -p $ROOT_DIR/temp
+ln -s $TEMP_DIR $ROOT_DIR/temp
 
 build_sdk() {
 	echo -e "\nBuilding SDK for: $1 ($CHART_SRC/$1)"
-	cd $ROOT_DIR
+
+	cd $TEMP_DIR
+
 	$SDK new $1 --type=helm --helm-chart-source="$CHART_SRC/$1" --cluster-scoped
 }
 
@@ -28,7 +35,7 @@ get_previous_version() {
 
 	SEMVER="$ROOT_DIR/semver.sh"
 
-	if [[ $REMOTE_VERSION -eq "null" ]]; then
+	if [ "$REMOTE_VERSION" == "null" ]; then
 		# There isn't a remote version, this is the first push
 		VERSION=$CHART_VERSION
 		REPLACES=false
@@ -81,22 +88,26 @@ build_csv() {
 	# Fetch info from Chart
 	NAME=$1
 	get_previous_version $NAME
-	CSV_NAME="$1.v$VERSION"
-	SOURCE_LINK=$(yq r $CHART_SRC/$1/Chart.yaml sources[0])
-	ICON_SRC=$(yq r $CHART_SRC/$1/Chart.yaml icon)
-	MAINTAINERS_NAME=$(yq r $CHART_SRC/$1/Chart.yaml maintainers[0].name)
-	MAINTAINERS_EMAIL=$(yq r $CHART_SRC/$1/Chart.yaml maintainers[0].email)
-	DESC=$(yq r $CHART_SRC/$1/Chart.yaml description)
+	CSV_NAME="$NAME.v$VERSION"
+	SOURCE_LINK=$(yq r $CHART_SRC/$NAME/Chart.yaml sources[0])
+	ICON_SRC=$(yq r $CHART_SRC/$NAME/Chart.yaml icon)
+	MAINTAINERS_NAME=$(yq r $CHART_SRC/$NAME/Chart.yaml maintainers[0].name)
+	MAINTAINERS_EMAIL=$(yq r $CHART_SRC/$NAME/Chart.yaml maintainers[0].email)
+	DESC=$(yq r $CHART_SRC/$NAME/Chart.yaml description)
 	API_VERSION="v1alpha1"
 	KIND=$(echo $NAME |  head -c 1 | tr [a-z] [A-Z]; echo $NAME | tail -c +2)
 
+	# Make a directory to hold our files
+	cd $ROOT_DIR
+	mkdir -p $NAME
+
 	# Write out CR metadata
-	CR_OUT="$ROOT_DIR/$1/$NAME.cr.yaml"
+	CR_OUT="$ROOT_DIR/$NAME/$NAME.cr.yaml"
 	cp "$ROOT_DIR/cr.template" $CR_OUT
 
 	# Grab default values, indent them, and append to CR spec
 	echo -e "\nspec:\n" >> $CR_OUT
-	tail -n +3 "$CHART_SRC/$1/values.yaml" | sed 's/^/  /' >> $CR_OUT
+	tail -n +3 "$CHART_SRC/$NAME/values.yaml" | sed 's/^/  /' >> $CR_OUT
 	yq w -i $CR_OUT kind $KIND
 	echo -e "  Wrote CR to $CR_OUT"
 
@@ -104,7 +115,7 @@ build_csv() {
 	OPERATOR_IMAGE="$QUAY_REPO/$NAME:$CHART_VERSION"
 
 	# Write out CSV
-	CSV_OUT="$ROOT_DIR/$1/$CSV_NAME.clusterserviceversion.yaml"
+	CSV_OUT="$ROOT_DIR/$NAME/$CSV_NAME.clusterserviceversion.yaml"
 	cp "$ROOT_DIR/csv.template" $CSV_OUT
 	echo -e "  Wrote CSV to $CSV_OUT"
 
@@ -138,7 +149,7 @@ build_csv() {
 
 	# Build up deployment spec from SDK output
 	yq w -i $CSV_OUT spec.install.spec.deployments[0].name "$NAME-operator"
-	tail -n +5 "$ROOT_DIR/$1/deploy/operator.yaml" | sed 's/^/        /' >> $CSV_OUT
+	tail -n +5 "$TEMP_DIR/$NAME/deploy/operator.yaml" | sed 's/^/        /' >> $CSV_OUT
 	yq w -i $CSV_OUT spec.install.spec.deployments[0].spec.template.spec.containers[0].image $OPERATOR_IMAGE
 	yq w -i $CSV_OUT spec.install.spec.deployments[0].spec.template.spec.serviceAccountName "$NAME-operator"
 	yq d -i $CSV_OUT spec.install.spec.deployments[0].spec.template.spec.containers[0].env
@@ -203,7 +214,7 @@ build_csv() {
 
 	# Move out CRD
 	CRD_OUT="$ROOT_DIR/$NAME/${NAME}.crd.yaml"
-	cp "$ROOT_DIR/$NAME/deploy/crds/charts_${API_VERSION}_${NAME}_crd.yaml" $CRD_OUT
+	cp "$TEMP_DIR/$NAME/deploy/crds/charts_${API_VERSION}_${NAME}_crd.yaml" $CRD_OUT
 
 	# Write out bundle
 	BUNDLE_OUT="$ROOT_DIR/$NAME/bundle.$VERSION.yaml"
@@ -222,11 +233,7 @@ build_csv() {
 }
 
 clean_sdks() {
-	rm -r "$ROOT_DIR/$NAME/build"
-	rm -r "$ROOT_DIR/$NAME/deploy"
-	rm -r "$ROOT_DIR/$NAME/helm-charts"
-	rm -rf "$ROOT_DIR/$NAME/.git/"
-	rm "$ROOT_DIR/$NAME/watches.yaml"
+	#rm -r "$TEMP_DIR"
 	rm "$ICON_OUT"
 }
 
@@ -239,9 +246,9 @@ push_image () {
 }
 
 for filename in $(cat < "$WHITELIST"); do
-    #build_sdk "$filename"
-    #build_image "$filename"
-    #build_csv "$filename"
-    #push_image "$filename"
-    #clean_sdks "$filename"
+    build_sdk "$filename"
+    build_image "$filename"
+    build_csv "$filename"
+    push_image "$filename"
+    clean_sdks "$filename"
 done
