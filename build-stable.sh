@@ -168,7 +168,7 @@ build_csv() {
 
 	# Grab chart desc and append our special message
 	echo -e "  description: |" >> $CSV_OUT
-	echo -e "$DESC\n\n_This was generated from a Helm chart automatically._\n\nFind out more about this Chart at $SOURCE_LINK. Helm charts typically use conatiners that run as root. This Operator is granted a SecurityContextContraint to allow this.\n\n" | sed 's/^/    /' >> $CSV_OUT
+	echo -e "$DESC\n\n**Testing update**\n\n_This was generated from a Helm chart automatically._\n\nFind out more about this Chart at $SOURCE_LINK. Helm charts typically use conatiners that run as root. This Operator is granted a SecurityContextContraint to allow this.\n\n" | sed 's/^/    /' >> $CSV_OUT
 
 	# Append icon base64 that is too long for yq to process
 	if [[ ! -z "$ICON_SRC" ]] && [ "$ICON_SRC" = "null" ]; then
