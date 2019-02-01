@@ -223,10 +223,17 @@ build_csv() {
 	echo -e "data:" > $BUNDLE_OUT
 	echo -e "  customResourceDefinitions: |-" >> $BUNDLE_OUT
 	cat $CRD_OUT | sed 's/^/      /' >> $BUNDLE_OUT
-	echo -e "  clusterServiceVersions: |-" >> $BUNDLE_OUT
-	cat $CSV_OUT | sed 's/^/      /' >> $BUNDLE_OUT
 	echo -e "  packages: |-" >> $BUNDLE_OUT
 	cat $PACKAGE_OUT | sed 's/^/      /' >> $BUNDLE_OUT
+
+	# Loop through all CSVs
+	echo -e "  clusterServiceVersions: |-" >> $BUNDLE_OUT
+	for FILE in $(find "$ROOT_DIR/$NAME/" -name '*clusterserviceversion.yaml');
+	do
+		cat $FILE | sed 's/^/      /' >> $BUNDLE_OUT
+	done
+
+	# Do some dumb find and replace because this yq thing can't make the structure I require
 	sed -i -e 's#  apiVersion: apiextensions.k8s.io/v1beta1#- apiVersion: apiextensions.k8s.io/v1beta1#g' $BUNDLE_OUT
 	sed -i -e 's#  apiVersion: operators.coreos.com/v1alpha1#- apiVersion: operators.coreos.com/v1alpha1#g' $BUNDLE_OUT
 	sed -i -e 's#  packageName:#- packageName:#g' $BUNDLE_OUT
@@ -251,6 +258,6 @@ for filename in $(cat < "$WHITELIST"); do
     build_sdk "$filename"
     build_image "$filename"
     build_csv "$filename"
-    push_image "$filename"
+    #push_image "$filename"
     clean_sdks "$filename"
 done
