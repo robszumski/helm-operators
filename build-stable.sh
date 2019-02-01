@@ -36,8 +36,9 @@ get_previous_version() {
 	SEMVER="$ROOT_DIR/semver.sh"
 
 	if [ "$REMOTE_VERSION" == "null" ]; then
-		# There isn't a remote version, this is the first push
-		VERSION=$CHART_VERSION
+		# There isn't a remote version, this is the first push add a -1 to it
+		PREREL=$($SEMVER get prerel $REMOTE_VERSION)
+		VERSION=$($SEMVER bump prerel $(($PREREL+1)) $REMOTE_VERSION)
 		REPLACES=false
 		echo "  Pushing $VERSION as the first release"
 	elif [ $($SEMVER compare $REMOTE_VERSION $CHART_VERSION) -eq 0 ] ; then
@@ -76,7 +77,8 @@ get_previous_version() {
 		fi
 	else 
 		# Our local chart version is higher, we can proceed normally
-		VERSION=$CHART_VERSION
+		PREREL=$($SEMVER get prerel $CHART_VERSION)
+		VERSION=$($SEMVER bump prerel $(($PREREL+1)) $CHART_VERSION)
 		REPLACES=true
 		echo "  Chart version is higher, setting to $VERSION"
 	fi
