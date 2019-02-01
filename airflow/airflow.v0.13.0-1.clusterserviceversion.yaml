@@ -7,7 +7,7 @@ metadata:
     description: Airflow is a platform to programmatically author, schedule and monitor
       workflows
     containerImage: quay.io/helmoperators/airflow:0.13.0
-    createdAt: 2019-01-31T17-38-07Z
+    createdAt: 2019-02-01T12-47-54Z
     support: gsemet
   name: airflow.v0.13.0-1
   namespace: placeholder
@@ -42,7 +42,6 @@ spec:
   maintainers:
   - email: gaetan@xeberon.net
     name: gsemet
-  replaces: airflow.v0.13.0
   install:
     spec:
       deployments:

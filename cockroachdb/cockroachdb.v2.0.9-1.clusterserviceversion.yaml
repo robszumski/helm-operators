@@ -6,7 +6,7 @@ metadata:
     categories: Helm
     description: CockroachDB is a scalable, survivable, strongly-consistent SQL database.
     containerImage: quay.io/helmoperators/cockroachdb:2.0.9
-    createdAt: 2019-01-31T17-37-52Z
+    createdAt: 2019-02-01T12-47-46Z
     support: a-robinson
   name: cockroachdb.v2.0.9-1
   namespace: placeholder
@@ -41,7 +41,6 @@ spec:
   maintainers:
   - email: alex@cockroachlabs.com
     name: a-robinson
-  replaces: cockroachdb.v2.0.9
   install:
     spec:
       deployments:

@@ -1,4 +1,4 @@
 packageName: airflow
 channels:
 - name: stable
-  currentCSV: airflow.v0.13.0
+  currentCSV: airflow.v0.13.0-1
