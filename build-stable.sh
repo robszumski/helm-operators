@@ -37,8 +37,8 @@ get_previous_version() {
 
 	if [ "$REMOTE_VERSION" == "null" ]; then
 		# There isn't a remote version, this is the first push add a -1 to it
-		PREREL=$($SEMVER get prerel $REMOTE_VERSION)
-		VERSION=$($SEMVER bump prerel $(($PREREL+1)) $REMOTE_VERSION)
+		PREREL=0
+		VERSION=$($SEMVER bump prerel $(($PREREL+1)) $CHART_VERSION)
 		REPLACES=false
 		echo "  Pushing $VERSION as the first release"
 	elif [ $($SEMVER compare $REMOTE_VERSION $CHART_VERSION) -eq 0 ] ; then
