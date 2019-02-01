@@ -21,12 +21,66 @@ build_image() {
 	docker build "$QUAY_REPO/$1"
 }
 
+get_previous_version() {
+	CHART_VERSION=$(yq r $CHART_SRC/$1/Chart.yaml version)
+	REMOTE_VERSION=$("$ROOT_DIR/read-quay-version.sh" $NAME)
+	echo "  Quay's latest version for $1 chart is $REMOTE_VERSION"
+
+	SEMVER="$ROOT_DIR/semver.sh"
+
+	if [[ $REMOTE_VERSION -eq "null" ]]; then
+		# There isn't a remote version, this is the first push
+		VERSION=$CHART_VERSION
+		REPLACES=false
+		echo "  Pushing $VERSION as the first release"
+	elif [ $($SEMVER compare $REMOTE_VERSION $CHART_VERSION) -eq 0 ] ; then
+		# This means a newer version of the CSV has been published than the chart contains, eg v1.2.3
+		# this indicates that we have probably pushed a v1.2.3-1 with CSV related changes
+		echo "  $REMOTE_VERSION is equal to chart's $CHART_VERSION!"
+		if [[ -z $($SEMVER get prerel $REMOTE_VERSION) ]]; then
+			# no -1, which means this needs a prerel added
+			PREREL=$($SEMVER get prerel $REMOTE_VERSION)
+			VERSION=$($SEMVER bump prerel $(($PREREL+1)) $REMOTE_VERSION)
+			REPLACES=true
+			echo "  Adding first prerel to $VERSION"
+		elif [[ ! -z $($SEMVER get prerel $REMOTE_VERSION) ]]; then
+			# there is a -1, which means we need to incrementit to 2
+			PREREL=$($SEMVER get prerel $REMOTE_VERSION)
+			VERSION=$($SEMVER bump prerel $(($PREREL+1)) $REMOTE_VERSION)
+			REPLACES=true
+			echo "  Bumped prerel tag, new version is $VERSION"
+		fi
+	elif [ $($SEMVER compare $REMOTE_VERSION $CHART_VERSION) -eq 1 ] ; then
+		echo "  $REMOTE_VERSION is greater than chart's $CHART_VERSION!"
+		# Blindly assume this just needs a prerel bump
+		# todo: don't assume these are the same minor and patch version
+		if [[ -z $($SEMVER get prerel $REMOTE_VERSION) ]]; then
+			# no -1, which means this needs a prerel added
+			PREREL=$($SEMVER get prerel $REMOTE_VERSION)
+			VERSION=$($SEMVER bump prerel $(($PREREL+1)) $REMOTE_VERSION)
+			REPLACES=true
+			echo "  Adding first prerel to $VERSION"
+		elif [[ ! -z $($SEMVER get prerel $REMOTE_VERSION) ]]; then
+			# there is a -1, which means we need to incrementit to 2
+			PREREL=$($SEMVER get prerel $REMOTE_VERSION)
+			VERSION=$($SEMVER bump prerel $(($PREREL+1)) $REMOTE_VERSION)
+			REPLACES=true
+			echo "  Bumped prerel tag, new version is $VERSION"
+		fi
+	else 
+		# Our local chart version is higher, we can proceed normally
+		VERSION=$CHART_VERSION
+		REPLACES=true
+		echo "  Chart version is higher, setting to $VERSION"
+	fi
+}
+
 build_csv() {
 	echo -e "\nBuilding CSV for: $1"
 
 	# Fetch info from Chart
 	NAME=$1
-	VERSION=$(yq r $CHART_SRC/$1/Chart.yaml version)
+	get_previous_version $NAME
 	CSV_NAME="$1.v$VERSION"
 	SOURCE_LINK=$(yq r $CHART_SRC/$1/Chart.yaml sources[0])
 	ICON_SRC=$(yq r $CHART_SRC/$1/Chart.yaml icon)
@@ -47,7 +101,7 @@ build_csv() {
 	echo -e "  Wrote CR to $CR_OUT"
 
 	# Compute values we control
-	OPERATOR_IMAGE="$QUAY_REPO/$NAME:$VERSION"
+	OPERATOR_IMAGE="$QUAY_REPO/$NAME:$CHART_VERSION"
 
 	# Write out CSV
 	CSV_OUT="$ROOT_DIR/$1/$CSV_NAME.clusterserviceversion.yaml"
@@ -73,6 +127,12 @@ build_csv() {
 	yq w -i $CSV_OUT spec.links[0].name "Helm Chart Source"
 	yq w -i $CSV_OUT spec.links[0].url $SOURCE_LINK
 
+	# Compute replaces CSV name
+	if [ $REPLACES = true ]; then
+		PREV_CSV="$NAME.v$REMOTE_VERSION"
+		yq w -i $CSV_OUT spec.replaces $PREV_CSV
+	fi
+
 	yq w -i $CSV_OUT spec.maintainers[0].name $MAINTAINERS_NAME
 	yq w -i $CSV_OUT spec.maintainers[0].email $MAINTAINERS_EMAIL
 
@@ -81,6 +141,11 @@ build_csv() {
 	tail -n +5 "$ROOT_DIR/$1/deploy/operator.yaml" | sed 's/^/        /' >> $CSV_OUT
 	yq w -i $CSV_OUT spec.install.spec.deployments[0].spec.template.spec.containers[0].image $OPERATOR_IMAGE
 	yq w -i $CSV_OUT spec.install.spec.deployments[0].spec.template.spec.serviceAccountName "$NAME-operator"
+	yq d -i $CSV_OUT spec.install.spec.deployments[0].spec.template.spec.containers[0].env
+	yq w -i $CSV_OUT spec.install.spec.deployments[0].spec.template.spec.containers[0].env[+].name "WATCH_NAMESPACE"
+	yq w -i $CSV_OUT spec.install.spec.deployments[0].spec.template.spec.containers[0].env[+].valueFrom.fieldRef.fieldPath "metadata.annotations['olm.targetNamespaces']"
+	# Do some dumb find and replace because this yq thing can't make the structure I require
+	sed -i -e 's/- valueFrom/  valueFrom/g' $CSV_OUT
 
 	# Append generic RBAC config
 	cat "$ROOT_DIR/rbac.template" | sed 's/^/      /' >> $CSV_OUT
@@ -90,7 +155,7 @@ build_csv() {
 
 	# Grab chart desc and append our special message
 	echo -e "  description: |" >> $CSV_OUT
-	echo -e "$DESC\n\n_This was generated from a Helm chart automatically._\n\nMany Helm charts require running a root, your admin will need to allow this with a SecurityContextConstraint." | sed 's/^/    /' >> $CSV_OUT
+	echo -e "$DESC\n\n_This was generated from a Helm chart automatically._\n\nFind out more about this Chart at $SOURCE_LINK. Helm charts typically use conatiners that run as root. This Operator is granted a SecurityContextContraint to allow this.\n\n" | sed 's/^/    /' >> $CSV_OUT
 
 	# Append icon base64 that is too long for yq to process
 	if [[ ! -z "$ICON_SRC" ]] && [ "$ICON_SRC" = "null" ]; then
@@ -167,17 +232,16 @@ clean_sdks() {
 
 push_image () {
 	# push docker image for Operator
-	docker tag "$QUAY_REPO/$NAME:latest" "$QUAY_REPO/$NAME:$VERSION"
-	docker push "$QUAY_REPO/$NAME:$VERSION"
+	docker tag "$QUAY_REPO/$NAME:latest" "$QUAY_REPO/$NAME:$CHART_VERSION"
+	docker push "$QUAY_REPO/$NAME:$CHART_VERSION"
 	# push bundle to Quay app registry
-	RANDOM=$(date +"%H-%M-%S")
-	"$ROOT_DIR/push-to-quay.sh" $NAME "$VERSION-$RANDOM" "$ROOT_DIR/$NAME/bundle.$VERSION.yaml"
+	"$ROOT_DIR/push-to-quay.sh" $NAME $VERSION "$ROOT_DIR/$NAME/bundle.$VERSION.yaml"
 }
 
 for filename in $(cat < "$WHITELIST"); do
-    build_sdk "$filename"
-    build_image "$filename"
-    build_csv "$filename"
-    push_image "$filename"
-    clean_sdks "$filename"
+    #build_sdk "$filename"
+    #build_image "$filename"
+    #build_csv "$filename"
+    #push_image "$filename"
+    #clean_sdks "$filename"
 done
